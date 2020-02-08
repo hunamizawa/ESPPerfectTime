@@ -16,8 +16,8 @@ ESP8266/ESP32 で時計などを製作する際に役立ちます。
 
 # Installation
 
-1. zip をここからダウンロード<br>
-   Download zip file from here
+1. [zip をここからダウンロード](https://github.com/hunamizawa/ESPPerfectTime/archive/master.zip)<br>
+   [Download zip file from here](https://github.com/hunamizawa/ESPPerfectTime/archive/master.zip)
 1. Arduino IDE を開く<br>
    Open Arduino IDE
 1. \[スケッチ\] → \[ライブラリをインクルード\] → \[.ZIP形式のライブラリをインストール...\] を選択<br>
