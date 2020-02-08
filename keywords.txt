@@ -1,0 +1,8 @@
+pftime	KEYWORD1
+time	KEYWORD2
+gmtime	KEYWORD2
+localtime	KEYWORD2
+gettimeofday	KEYWORD2
+settimeofday	KEYWORD2
+configTime	KEYWORD2
+configTzTime	KEYWORD2
