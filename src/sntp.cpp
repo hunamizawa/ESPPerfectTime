@@ -199,7 +199,9 @@ namespace pftime_sntp {
 #  include <arch/bpstruct.h>
 #endif
 PACK_STRUCT_BEGIN
-#define PACK_STRUCT_FLD_8 PACK_STRUCT_FIELD
+#ifndef PACK_STRUCT_FLD_8
+#define PACK_STRUCT_FLD_8(x) PACK_STRUCT_FIELD(x)
+#endif // PACK_STRUCT_FLD_8
 struct sntp_msg {
   PACK_STRUCT_FLD_8(u8_t           li_vn_mode);
   PACK_STRUCT_FLD_8(u8_t           stratum);
@@ -233,7 +235,9 @@ struct sntp_server {
 };
 static struct sntp_server _servers[SNTP_MAX_SERVERS];
 
+#if SNTP_GET_SERVERS_FROM_DHCP
 static u8_t _set_servers_from_dhcp;
+#endif
 #if SNTP_SUPPORT_MULTIPLE_SERVERS
 /** The currently used server (initialized to 0) */
 static u8_t _current_server;
@@ -265,7 +269,7 @@ static uint32 _update_delay = SNTP_UPDATE_DELAY;
 
 static void ICACHE_FLASH_ATTR
 set_system_time_us(const u32_t sec, const u32_t us, const u8_t li) {
-  struct timeval tv = {sec, us};
+  struct timeval tv = {(time_t)sec, (suseconds_t)us};
   pftime::settimeofday(&tv, nullptr, li);
 }
 
@@ -342,7 +346,7 @@ process(u32_t *originate_timestamp, u32_t *receive_timestamp, u32_t *transmit_ti
   set_system_time_us(SEPARATE_USEC(true_now), li);
   /* display local time from GMT time */
   LWIP_DEBUGF(SNTP_DEBUG_TRACE, ("pftime_sntp::process: time = %d.%06d, LI = %s\n", SEPARATE_USEC(true_now), LI_ntoa(li)));
-  LWIP_DEBUGF(SNTP_DEBUG_TRACE, ("pftime_sntp::process: RTT  = %"S32_F" us, \n", rtt));
+  LWIP_DEBUGF(SNTP_DEBUG_TRACE, ("pftime_sntp::process: RTT  = %" S32_F " us, \n", rtt));
 }
 
 /**
@@ -378,7 +382,7 @@ retry(void* arg)
 {
   LWIP_UNUSED_ARG(arg);
 
-  LWIP_DEBUGF(SNTP_DEBUG_STATE, ("pftime_sntp::retry: Next request will be sent in %"U32_F" ms\n",
+  LWIP_DEBUGF(SNTP_DEBUG_STATE, ("pftime_sntp::retry: Next request will be sent in %" U32_F " ms\n",
     _retry_timeout));
 
   /* set up a timer to send a retry and increase the retry delay */
@@ -424,7 +428,7 @@ try_next_server(void* arg)
         || (_servers[_current_server].name != NULL)
 #endif
         ) {
-      LWIP_DEBUGF(SNTP_DEBUG_STATE, ("pftime_sntp::try_next_server: Sending request to server %"U16_F"\n",
+      LWIP_DEBUGF(SNTP_DEBUG_STATE, ("pftime_sntp::try_next_server: Sending request to server %" U16_F "\n",
         (u16_t)_current_server));
       /* new server: reset retry timeout */
       SNTP_RESET_RETRY_TIMEOUT();
@@ -464,7 +468,7 @@ err_t recv_check(struct pbuf *p, const ip_addr_t *addr, const u16_t port,
 
   /* process the response */
   if (p->tot_len < SNTP_MSG_LEN) {
-    LWIP_DEBUGF(SNTP_DEBUG_WARN, ("pftime_sntp::recv: Invalid packet length: %"U16_F"\n", p->tot_len));
+    LWIP_DEBUGF(SNTP_DEBUG_WARN, ("pftime_sntp::recv: Invalid packet length: %" U16_F "\n", p->tot_len));
     return ERR_ARG;
   }
   
@@ -474,7 +478,7 @@ err_t recv_check(struct pbuf *p, const ip_addr_t *addr, const u16_t port,
   /* check SNTP mode */
   if ((*mode != SNTP_MODE_SERVER) &&
       (*mode != SNTP_MODE_BROADCAST)) {
-    LWIP_DEBUGF(SNTP_DEBUG_WARN, ("pftime_sntp::recv: Invalid mode in response: %"U16_F"\n", (u16_t)*mode));
+    LWIP_DEBUGF(SNTP_DEBUG_WARN, ("pftime_sntp::recv: Invalid mode in response: %" U16_F "\n", (u16_t)*mode));
     return ERR_ARG;
   }
 
@@ -539,7 +543,7 @@ recv(void *arg, struct udp_pcb* pcb, struct pbuf *p, const ip_addr_t *addr, u16_
 
     /* Set up timeout for next request */
     sys_timeout((u32_t)_update_delay, request, NULL);
-    LWIP_DEBUGF(SNTP_DEBUG_STATE, ("pftime_sntp::recv: Scheduled next time request: %"U32_F" ms\n",
+    LWIP_DEBUGF(SNTP_DEBUG_STATE, ("pftime_sntp::recv: Scheduled next time request: %" U32_F " ms\n",
       (u32_t)_update_delay));
   } else if (err == SNTP_ERR_KOD) {
     /* Kiss-of-death packet. Use another server or increase UPDATE_DELAY. */
@@ -576,7 +580,7 @@ send_request(const ip_addr_t *server_addr)
     ip_addr_set(&_last_server_address, server_addr);
 #endif /* SNTP_CHECK_RESPONSE >= 1 */
   } else {
-    LWIP_DEBUGF(SNTP_DEBUG_SERIOUS, ("pftime_sntp::send_request: Out of memory, trying again in %"U32_F" ms\n",
+    LWIP_DEBUGF(SNTP_DEBUG_SERIOUS, ("pftime_sntp::send_request: Out of memory, trying again in %" U32_F " ms\n",
       (u32_t)SNTP_RETRY_TIMEOUT));
     /* out of memory: set up a timer to send a retry */
     sys_timeout((u32_t)SNTP_RETRY_TIMEOUT, request, NULL);

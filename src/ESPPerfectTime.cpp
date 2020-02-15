@@ -89,11 +89,15 @@ time_t pftime::time(time_t *timer) {
   /* see: https://github.com/esp8266/Arduino/issues/4637 */
   struct timeval tv;
   pftime::gettimeofday(&tv, nullptr);
+  if (timer)
+    *timer = tv.tv_sec;
   return tv.tv_sec;
 #else
   /* ESP32's time() is correct */
   time_t t = ::time(nullptr);
   adjustLeapSec(&t);
+  if (timer)
+    *timer = t;
   return t;
 #endif
 }
@@ -123,6 +127,8 @@ DEF_FOOTIME(gmtime);
 DEF_FOOTIME(localtime);
 
 int pftime::gettimeofday(struct timeval *tv, struct timezone *tz) {
+  (void)tz;
+
   if (tv) {
     ::gettimeofday(tv, nullptr);
     adjustLeapSec(&tv->tv_sec);
@@ -140,24 +146,27 @@ int pftime::settimeofday(const struct timeval *tv, const struct timezone *tz, ui
     }
     return result;
   }
+  return 1;
 }
 
 // from esp32-hal-time.c
 static void setTimeZone(long offset, int daylight)
 {
+    using std::abs;
+
     char cst[17] = {0};
     char cdt[17] = "DST";
     char tz[33] = {0};
 
     if(offset % 3600){
-        sprintf(cst, "UTC%ld:%02u:%02u", offset / 3600, abs((offset % 3600) / 60), abs(offset % 60));
+        sprintf(cst, "UTC%ld:%02ld:%02ld", offset / 3600, abs((offset % 3600) / 60), abs(offset % 60));
     } else {
         sprintf(cst, "UTC%ld", offset / 3600);
     }
     if(daylight != 3600){
         long tz_dst = offset - daylight;
         if(tz_dst % 3600){
-            sprintf(cdt, "DST%ld:%02u:%02u", tz_dst / 3600, abs((tz_dst % 3600) / 60), abs(tz_dst % 60));
+            sprintf(cdt, "DST%ld:%02ld:%02ld", tz_dst / 3600, abs((tz_dst % 3600) / 60), abs(tz_dst % 60));
         } else {
             sprintf(cdt, "DST%ld", tz_dst / 3600);
         }
