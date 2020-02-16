@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/hunamizawa/ESPPerfectTime.svg?branch=master)](https://travis-ci.org/hunamizawa/ESPPerfectTime)
+
 # ESPPerfectTime
 
 ESP8266/ESP32用 SNTP 時刻同期 Arduino ライブラリ<br>
