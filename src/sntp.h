@@ -1,19 +1,19 @@
 #ifndef ESPPERFECTTIME_SNTP_H_
 #define ESPPERFECTTIME_SNTP_H_
 
-#include <time.h>
 #include <sys/time.h>
+#include <time.h>
 #ifdef ESP8266
-#include <osapi.h>
-#include <os_type.h>
 #include <coredecls.h>
+#include <os_type.h>
+#include <osapi.h>
 #endif // ESP8266
-#include <arch/cc.h>
 #include "ESPPerfectTime.h"
+#include <arch/cc.h>
 
 /** Set this to 1 to allow config of SNTP server(s) by DNS name */
 #ifndef SNTP_SERVER_DNS
-#define SNTP_SERVER_DNS             1
+#define SNTP_SERVER_DNS        1
 #endif
 
 #define USECS_IN_SEC           1000000
@@ -32,32 +32,32 @@
 )
 
 namespace pftime_sntp {
-  /**
-   * Initialize this module.
-   * Send out request instantly or after SNTP_STARTUP_DELAY(_FUNC).
-   */
-  void init(void);
-  /**
-   * Stop this module.
-   */
-  void stop(void);
+/**
+ * Initialize this module.
+ * Send out request instantly or after SNTP_STARTUP_DELAY(_FUNC).
+ */
+void init(void);
+/**
+ * Stop this module.
+ */
+void stop(void);
 #if SNTP_SERVER_DNS
-  /**
-   * Initialize one of the NTP servers by name
-   *
-   * @param numdns the index of the NTP server to set must be < SNTP_MAX_SERVERS
-   * @param dnsserver DNS name of the NTP server to set, to be resolved at contact time
-   */
-  void setservername(u8_t idx, char *server);
-  /**
-   * Obtain one of the currently configured by name NTP servers.
-   *
-   * @param numdns the index of the NTP server
-   * @return IP address of the indexed NTP server or NULL if the NTP
-   *         server has not been configured by name (or at all)
-   */
-  char *getservername(u8_t idx);
+/**
+ * Initialize one of the NTP servers by name
+ *
+ * @param numdns the index of the NTP server to set must be < SNTP_MAX_SERVERS
+ * @param dnsserver DNS name of the NTP server to set, to be resolved at contact time
+ */
+void setservername(u8_t idx, char *server);
+/**
+ * Obtain one of the currently configured by name NTP servers.
+ *
+ * @param numdns the index of the NTP server
+ * @return IP address of the indexed NTP server or NULL if the NTP
+ *         server has not been configured by name (or at all)
+ */
+char *getservername(u8_t idx);
 #endif /* SNTP_SERVER_DNS */
-}
+} // namespace pftime_sntp
 
 #endif // ESPPERFECTTIME_SNTP_H_

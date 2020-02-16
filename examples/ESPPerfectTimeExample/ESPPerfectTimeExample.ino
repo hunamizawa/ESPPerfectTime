@@ -2,7 +2,7 @@
 #ifdef ESP8266
 #include <ESP8266WiFi.h>
 #include <TZ.h>
-#endif 
+#endif
 #ifdef ESP32
 #include <WiFi.h>
 #endif
@@ -20,7 +20,7 @@ static void _delayMicroseconds(uint64_t us) {
     yield();
 }
 #else /* !ESP8266 */
-#define _delayMicroseconds(us)   delayMicroseconds(us)
+#define _delayMicroseconds(us) delayMicroseconds(us)
 #endif
 
 void connectWiFi() {
@@ -47,7 +47,7 @@ void setup() {
 #ifdef ESP8266
   // On ESP8266, you can use <TZ.h> that includes many timezone definitions
   pftime::configTime(TZ_Asia_Tokyo, ntpServer);
-#endif 
+#endif
 #ifdef ESP32
   pftime::configTzTime("JST-9", ntpServer);
 #endif
@@ -56,10 +56,10 @@ void setup() {
 void printTm(struct tm *tm, suseconds_t us) {
   static const char *wd[7] = {"Sun", "Mon", "Tue", "Wed", "Thr", "Fri", "Sat"};
   Serial.printf("%04d/%02d/%02d(%s) %02d:%02d:%02d.%06ld\n",
-        tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
-        wd[tm->tm_wday],
-        tm->tm_hour, tm->tm_min, tm->tm_sec,
-        us);
+                tm->tm_year + 1900, tm->tm_mon + 1, tm->tm_mday,
+                wd[tm->tm_wday],
+                tm->tm_hour, tm->tm_min, tm->tm_sec,
+                us);
 }
 
 void loop() {
@@ -68,7 +68,7 @@ void loop() {
   Serial.printf("\ntime: %ld\n", t);
 
   suseconds_t us;
-  struct tm  *tm = pftime::gmtime(nullptr, &us);
+  struct tm * tm = pftime::gmtime(nullptr, &us);
   Serial.print("gmtime:    ");
   printTm(tm, us);
 

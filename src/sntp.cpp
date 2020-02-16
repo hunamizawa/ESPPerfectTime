@@ -27,22 +27,22 @@
  */
 
 #include <Arduino.h>
-#include <time.h>
-#include <sys/time.h>
 #include <errno.h>
+#include <sys/time.h>
+#include <time.h>
 #ifdef ESP8266
-#include <osapi.h>
-#include <os_type.h>
 #include <coredecls.h>
+#include <os_type.h>
+#include <osapi.h>
 #endif // ESP8266
-#include <lwip/init.h>
+#include <arch/cc.h>
 #include <lwip/def.h>
-#include <lwip/err.h>
-#include <lwip/udp.h>
 #include <lwip/dns.h>
+#include <lwip/err.h>
+#include <lwip/init.h>
 #include <lwip/ip_addr.h>
 #include <lwip/timeouts.h>
-#include <arch/cc.h>
+#include <lwip/udp.h>
 #ifdef ESP8266
 #include <sntp-lwip2.h>
 #endif // ESP8266
@@ -56,7 +56,6 @@
 #define LWIP_DEBUGF(debug, message)
 /* uncomment below to get debug output */
 //#define LWIP_DEBUGF(_, x) Serial.printf x
-
 
 /** SNTP server port */
 #ifndef SNTP_PORT
@@ -73,10 +72,10 @@
 #ifndef SNTP_SUPPORT_MULTIPLE_SERVERS
 #if SNTP_MAX_SERVERS > 1
 #define SNTP_SUPPORT_MULTIPLE_SERVERS 1
-#else /* NTP_MAX_SERVERS > 1 */
+#else /* SNTP_MAX_SERVERS <= 1 */
 #define SNTP_SUPPORT_MULTIPLE_SERVERS 0
-#endif /* NTP_MAX_SERVERS > 1 */
-#else /* SNTP_SUPPORT_MULTIPLE_SERVERS */
+#endif /* SNTP_MAX_SERVERS > 1 */
+#else  /* !SNTP_SUPPORT_MULTIPLE_SERVERS */
 /* The developer has defined SNTP_SUPPORT_MULTIPLE_SERVERS, probably from old code */
 #if SNTP_MAX_SERVERS <= 1
 #error "SNTP_MAX_SERVERS needs to be defined to the max amount of servers if SNTP_SUPPORT_MULTIPLE_SERVERS is defined"
@@ -196,40 +195,40 @@ namespace pftime_sntp {
  * on Feb 07, 2036, 06:28:16.
  */
 #ifdef PACK_STRUCT_USE_INCLUDES
-#  include <arch/bpstruct.h>
+#include <arch/bpstruct.h>
 #endif
 PACK_STRUCT_BEGIN
 #ifndef PACK_STRUCT_FLD_8
 #define PACK_STRUCT_FLD_8(x) PACK_STRUCT_FIELD(x)
 #endif // PACK_STRUCT_FLD_8
 struct sntp_msg {
-  PACK_STRUCT_FLD_8(u8_t           li_vn_mode);
-  PACK_STRUCT_FLD_8(u8_t           stratum);
-  PACK_STRUCT_FLD_8(u8_t           poll);
-  PACK_STRUCT_FLD_8(u8_t           precision);
-  PACK_STRUCT_FIELD(u32_t          root_delay);
-  PACK_STRUCT_FIELD(u32_t          root_dispersion);
-  PACK_STRUCT_FIELD(u32_t          reference_identifier);
-  PACK_STRUCT_FIELD(u32_t          reference_timestamp[2]);
-  PACK_STRUCT_FIELD(u32_t          originate_timestamp[2]);
-  PACK_STRUCT_FIELD(u32_t          receive_timestamp[2]);
-  PACK_STRUCT_FIELD(u32_t          transmit_timestamp[2]);
+  PACK_STRUCT_FLD_8(u8_t  li_vn_mode);
+  PACK_STRUCT_FLD_8(u8_t  stratum);
+  PACK_STRUCT_FLD_8(u8_t  poll);
+  PACK_STRUCT_FLD_8(u8_t  precision);
+  PACK_STRUCT_FIELD(u32_t root_delay);
+  PACK_STRUCT_FIELD(u32_t root_dispersion);
+  PACK_STRUCT_FIELD(u32_t reference_identifier);
+  PACK_STRUCT_FIELD(u32_t reference_timestamp[2]);
+  PACK_STRUCT_FIELD(u32_t originate_timestamp[2]);
+  PACK_STRUCT_FIELD(u32_t receive_timestamp[2]);
+  PACK_STRUCT_FIELD(u32_t transmit_timestamp[2]);
 } PACK_STRUCT_STRUCT;
 PACK_STRUCT_END
 #ifdef PACK_STRUCT_USE_INCLUDES
-#  include <arch/bpstruct.h>
+#include <arch/bpstruct.h>
 #endif
 
 /* function prototypes */
 static void request(void *arg);
 
 /** The UDP pcb used by the SNTP client */
-static struct udp_pcb* _sntp_pcb;
+static struct udp_pcb *_sntp_pcb;
 
 /** Names/Addresses of servers */
 struct sntp_server {
 #if SNTP_SERVER_DNS
-  char* name;
+  char *name;
 #endif /* SNTP_SERVER_DNS */
   ip_addr_t addr;
 };
@@ -290,31 +289,11 @@ sntpsec_to_unixsec(const u32_t ntpsec) {
   return (sec & 0x80000000) == 0 ? sec + DIFF_SEC_1970_2036 : sec - DIFF_SEC_1900_1970;
 }
 
-#define DEBUG_ABS(x)    ((x) > 0 ? x : -x)
-#define DEBUG_HOGE(x)                                 \
-  do                                                  \
-  {                                                   \
-    s32_t __upper__ = (x) / 1000000000L;              \
-    if (__upper__ == 0)                               \
-    {                                                 \
-      Serial.printf("%s = ", #x);                     \
-      Serial.println((s32_t)(x));                     \
-    }                                                 \
-    else                                              \
-    {                                                 \
-      u32_t __lower__ = DEBUG_ABS((x) % 1000000000L); \
-      Serial.printf("%s = ", #x);                     \
-      Serial.print(__upper__);                        \
-      Serial.println(__lower__);                      \
-    }                                                 \
-  } while (0)
-
 /**
  * SNTP processing of received timestamp
  */
 static void ICACHE_FLASH_ATTR
-process(u32_t *originate_timestamp, u32_t *receive_timestamp, u32_t *transmit_timestamp, u8_t li)
-{
+process(u32_t *originate_timestamp, u32_t *receive_timestamp, u32_t *transmit_timestamp, u8_t li) {
   if (originate_timestamp == nullptr || receive_timestamp == nullptr) {
     u32_t sec = sntpsec_to_unixsec(transmit_timestamp[0]);
     u32_t us  = ntohl(transmit_timestamp[1]) / 4295;
@@ -340,21 +319,19 @@ process(u32_t *originate_timestamp, u32_t *receive_timestamp, u32_t *transmit_ti
   get_system_time_us(&now_sec, &now_us);
   s64_t now = COMBINE_TO_USEC((s64_t)now_sec, (s64_t)now_us);
 
-  s64_t toffset = ((rx + tx) - (orig + now)) >> 1;
-  s64_t rtt = (now - orig) - (tx - rx);
+  s64_t toffset  = ((rx + tx) - (orig + now)) >> 1; /* x / 2 == x >> 1 */
   s64_t true_now = now + toffset;
   set_system_time_us(SEPARATE_USEC(true_now), li);
   /* display local time from GMT time */
   LWIP_DEBUGF(SNTP_DEBUG_TRACE, ("pftime_sntp::process: time = %d.%06d, LI = %s\n", SEPARATE_USEC(true_now), LI_ntoa(li)));
-  LWIP_DEBUGF(SNTP_DEBUG_TRACE, ("pftime_sntp::process: RTT  = %" S32_F " us, \n", rtt));
+  LWIP_DEBUGF(SNTP_DEBUG_TRACE, ("pftime_sntp::process: RTT  = %" S32_F " us, \n", (now - orig) - (tx - rx)));
 }
 
 /**
  * Initialize request struct to be sent to server.
  */
 static void ICACHE_FLASH_ATTR
-initialize_request(struct sntp_msg *req)
-{
+initialize_request(struct sntp_msg *req) {
   os_memset(req, 0, SNTP_MSG_LEN);
   req->li_vn_mode = LI_NO_WARNING | SNTP_VERSION | SNTP_MODE_CLIENT;
 
@@ -378,15 +355,14 @@ initialize_request(struct sntp_msg *req)
  * @param arg is unused (only necessary to conform to sys_timeout)
  */
 static void ICACHE_FLASH_ATTR
-retry(void* arg)
-{
+retry(void *arg) {
   LWIP_UNUSED_ARG(arg);
 
   LWIP_DEBUGF(SNTP_DEBUG_STATE, ("pftime_sntp::retry: Next request will be sent in %" U32_F " ms\n",
     _retry_timeout));
 
   /* set up a timer to send a retry and increase the retry delay */
-  sys_timeout(_retry_timeout, request, NULL);
+  sys_timeout(_retry_timeout, request, nullptr);
 
 #if SNTP_RETRY_TIMEOUT_EXP
   {
@@ -412,8 +388,7 @@ retry(void* arg)
  * @param arg is unused (only necessary to conform to sys_timeout)
  */
 static void ICACHE_FLASH_ATTR
-try_next_server(void* arg)
-{
+try_next_server(void *arg) {
   u8_t old_server, i;
   LWIP_UNUSED_ARG(arg);
 
@@ -425,7 +400,7 @@ try_next_server(void* arg)
     }
     if (!ip_addr_isany(&_servers[_current_server].addr)
 #if SNTP_SERVER_DNS
-        || (_servers[_current_server].name != NULL)
+        || (_servers[_current_server].name != nullptr)
 #endif
         ) {
       LWIP_DEBUGF(SNTP_DEBUG_STATE, ("pftime_sntp::try_next_server: Sending request to server %" U16_F "\n",
@@ -433,13 +408,13 @@ try_next_server(void* arg)
       /* new server: reset retry timeout */
       SNTP_RESET_RETRY_TIMEOUT();
       /* instantly send a request to the next server */
-      request(NULL);
+      request(nullptr);
       return;
     }
   }
   /* no other valid server found */
   _current_server = old_server;
-  retry(NULL);
+  retry(nullptr);
 }
 #else /* SNTP_SUPPORT_MULTIPLE_SERVERS */
 /* Always retry on error if only one server is supported */
@@ -451,9 +426,9 @@ err_t recv_check(struct pbuf *p, const ip_addr_t *addr, const u16_t port,
                  u8_t  *mode,
                  u32_t *originate_timestamp,
                  u32_t *receive_timestamp,
-                 u32_t *transmit_timestamp)
-{
-  u8_t  stratum;
+                 u32_t *transmit_timestamp) {
+
+  u8_t stratum;
 
 #if SNTP_CHECK_RESPONSE >= 1
   /* check server address and port */
@@ -461,7 +436,7 @@ err_t recv_check(struct pbuf *p, const ip_addr_t *addr, const u16_t port,
     LWIP_DEBUGF(SNTP_DEBUG_WARN, ("pftime_sntp::recv: Invalid server address or port\n"));
     return ERR_ARG;
   }
-#else /* SNTP_CHECK_RESPONSE >= 1 */
+#else  /* SNTP_CHECK_RESPONSE < 1 */
   LWIP_UNUSED_ARG(addr);
   LWIP_UNUSED_ARG(port);
 #endif /* SNTP_CHECK_RESPONSE >= 1 */
@@ -508,7 +483,7 @@ err_t recv_check(struct pbuf *p, const ip_addr_t *addr, const u16_t port,
     /* @todo: add code for SNTP_CHECK_RESPONSE >= 3 and >= 4 here */
 
     /* correct answer */
-    pbuf_copy_partial(p, receive_timestamp,  SNTP_RECEIVE_TIME_SIZE * 4, SNTP_OFFSET_RECEIVE_TIME);
+    pbuf_copy_partial(p, receive_timestamp, SNTP_RECEIVE_TIME_SIZE * 4, SNTP_OFFSET_RECEIVE_TIME);
   }
   pbuf_copy_partial(p, transmit_timestamp, SNTP_RECEIVE_TIME_SIZE * 4, SNTP_OFFSET_TRANSMIT_TIME);
   return ERR_OK;
@@ -516,8 +491,7 @@ err_t recv_check(struct pbuf *p, const ip_addr_t *addr, const u16_t port,
 
 /** UDP recv callback for the sntp pcb */
 static void ICACHE_FLASH_ATTR
-recv(void *arg, struct udp_pcb* pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port)
-{
+recv(void *arg, struct udp_pcb *pcb, struct pbuf *p, const ip_addr_t *addr, u16_t port) {
   u8_t  li, mode;
   u32_t originate_timestamp[2];
   u32_t receive_timestamp  [SNTP_RECEIVE_TIME_SIZE];
@@ -527,8 +501,8 @@ recv(void *arg, struct udp_pcb* pcb, struct pbuf *p, const ip_addr_t *addr, u16_
   LWIP_UNUSED_ARG(pcb);
 
   /* packet received: stop retry timeout  */
-  sys_untimeout(try_next_server, NULL);
-  sys_untimeout(request, NULL);
+  sys_untimeout(try_next_server, nullptr);
+  sys_untimeout(request, nullptr);
 
   err_t err = recv_check(p, addr, port, &li, &mode, originate_timestamp, receive_timestamp, transmit_timestamp);
   pbuf_free(p);
@@ -542,15 +516,15 @@ recv(void *arg, struct udp_pcb* pcb, struct pbuf *p, const ip_addr_t *addr, u16_
       process(nullptr,             nullptr,           transmit_timestamp, li);
 
     /* Set up timeout for next request */
-    sys_timeout((u32_t)_update_delay, request, NULL);
+    sys_timeout((u32_t)_update_delay, request, nullptr);
     LWIP_DEBUGF(SNTP_DEBUG_STATE, ("pftime_sntp::recv: Scheduled next time request: %" U32_F " ms\n",
       (u32_t)_update_delay));
   } else if (err == SNTP_ERR_KOD) {
     /* Kiss-of-death packet. Use another server or increase UPDATE_DELAY. */
-    try_next_server(NULL);
+    try_next_server(nullptr);
   } else {
     /* another error, try the same server again */
-    retry(NULL);
+    retry(nullptr);
   }
 }
 
@@ -559,12 +533,11 @@ recv(void *arg, struct udp_pcb* pcb, struct pbuf *p, const ip_addr_t *addr, u16_
  * @param server_addr resolved IP address of the SNTP server
  */
 static void ICACHE_FLASH_ATTR
-send_request(const ip_addr_t *server_addr)
-{
-  struct pbuf* p;
+send_request(const ip_addr_t *server_addr) {
+  struct pbuf *p;
 //  os_printf("send_request\n");
   p = pbuf_alloc(PBUF_TRANSPORT, SNTP_MSG_LEN, PBUF_RAM);
-  if (p != NULL) {
+  if (p != nullptr) {
     struct sntp_msg *sntpmsg = (struct sntp_msg *)p->payload;
     LWIP_DEBUGF(SNTP_DEBUG_STATE, ("pftime_sntp::send_request: Sending request to server\n"));
     /* initialize request message */
@@ -574,7 +547,7 @@ send_request(const ip_addr_t *server_addr)
     /* free the pbuf after sending it */
     pbuf_free(p);
     /* set up receive timeout: try next server or retry on timeout */
-    sys_timeout((u32_t)SNTP_RECV_TIMEOUT, try_next_server, NULL);
+    sys_timeout((u32_t)SNTP_RECV_TIMEOUT, try_next_server, nullptr);
 #if SNTP_CHECK_RESPONSE >= 1
     /* save server address to verify it in recv() */ 
     ip_addr_set(&_last_server_address, server_addr);
@@ -583,7 +556,7 @@ send_request(const ip_addr_t *server_addr)
     LWIP_DEBUGF(SNTP_DEBUG_SERIOUS, ("pftime_sntp::send_request: Out of memory, trying again in %" U32_F " ms\n",
       (u32_t)SNTP_RETRY_TIMEOUT));
     /* out of memory: set up a timer to send a retry */
-    sys_timeout((u32_t)SNTP_RETRY_TIMEOUT, request, NULL);
+    sys_timeout((u32_t)SNTP_RETRY_TIMEOUT, request, nullptr);
   }
 }
 
@@ -592,19 +565,18 @@ send_request(const ip_addr_t *server_addr)
  * DNS found callback when using DNS names as server address.
  */
 static void ICACHE_FLASH_ATTR
-dns_found(const char* hostname, const ip_addr_t *ipaddr, void *arg)
-{
+dns_found(const char *hostname, const ip_addr_t *ipaddr, void *arg) {
   LWIP_UNUSED_ARG(hostname);
   LWIP_UNUSED_ARG(arg);
 
-  if (ipaddr != NULL) {
+  if (ipaddr != nullptr) {
     /* Address resolved, send request */
     LWIP_DEBUGF(SNTP_DEBUG_STATE, ("pftime_sntp::dns_found: Server address resolved, sending request\n"));
     send_request(ipaddr);
   } else {
     /* DNS resolving failed -> try another server */
     LWIP_DEBUGF(SNTP_DEBUG_WARN_STATE, ("pftime_sntp::dns_found: Failed to resolve server address resolved, trying next server\n"));
-    try_next_server(NULL);
+    try_next_server(nullptr);
   }
 }
 #endif /* SNTP_SERVER_DNS */
@@ -615,10 +587,9 @@ dns_found(const char* hostname, const ip_addr_t *ipaddr, void *arg)
  * @param arg is unused (only necessary to conform to sys_timeout)
  */
 static void ICACHE_FLASH_ATTR
-request(void *arg)
-{
+request(void *arg) {
   ip_addr_t sntp_server_address;
-  err_t err;
+  err_t     err;
 
   LWIP_UNUSED_ARG(arg);
 
@@ -629,7 +600,7 @@ request(void *arg)
     /* always resolve the name and rely on dns-internal caching & timeout */
     ip_addr_set_any(false, &_servers[_current_server].addr);
     err = dns_gethostbyname(_servers[_current_server].name, &sntp_server_address,
-      dns_found, NULL);
+      dns_found, nullptr);
     if (err == ERR_INPROGRESS) {
       /* DNS request sent, wait for dns_found being called */
       LWIP_DEBUGF(SNTP_DEBUG_STATE, ("pftime_sntp::request: Waiting for server address to be resolved.\n"));
@@ -652,7 +623,7 @@ request(void *arg)
   } else {
     /* address conversion failed, try another server */
     LWIP_DEBUGF(SNTP_DEBUG_WARN_STATE, ("pftime_sntp::request: Invalid server address, trying next server.\n"));
-    sys_timeout((u32_t)SNTP_RETRY_TIMEOUT, try_next_server, NULL);
+    sys_timeout((u32_t)SNTP_RETRY_TIMEOUT, try_next_server, nullptr);
   }
 }
 
@@ -661,8 +632,7 @@ request(void *arg)
  * Send out request instantly or after SNTP_STARTUP_DELAY(_FUNC).
  */
 void ICACHE_FLASH_ATTR
-init(void)
-{
+init(void) {
 #ifdef SNTP_SERVER_ADDRESS
 #if SNTP_SERVER_DNS
   setservername(0, SNTP_SERVER_ADDRESS);
@@ -671,16 +641,16 @@ init(void)
 #endif
 #endif /* SNTP_SERVER_ADDRESS */
 
-  if (_sntp_pcb == NULL) {
+  if (_sntp_pcb == nullptr) {
     SNTP_RESET_RETRY_TIMEOUT();
     _sntp_pcb = udp_new();
-    LWIP_ASSERT("Failed to allocate udp pcb for sntp client", _sntp_pcb != NULL);
-    if (_sntp_pcb != NULL) {
-      udp_recv(_sntp_pcb, recv, NULL);
+    LWIP_ASSERT("Failed to allocate udp pcb for sntp client", _sntp_pcb != nullptr);
+    if (_sntp_pcb != nullptr) {
+      udp_recv(_sntp_pcb, recv, nullptr);
 #if SNTP_STARTUP_DELAY
-      sys_timeout((u32_t)SNTP_STARTUP_DELAY_FUNC, request, NULL);
+      sys_timeout((u32_t)SNTP_STARTUP_DELAY_FUNC, request, nullptr);
 #else
-      request(NULL);
+      request(nullptr);
 #endif
     }
   }
@@ -690,12 +660,11 @@ init(void)
  * Stop this module.
  */
 void ICACHE_FLASH_ATTR
-stop(void)
-{
-  if (_sntp_pcb != NULL) {
-    sys_untimeout(request, NULL);
+stop(void) {
+  if (_sntp_pcb != nullptr) {
+    sys_untimeout(request, nullptr);
     udp_remove(_sntp_pcb);
-    _sntp_pcb = NULL;
+    _sntp_pcb = nullptr;
   }
 }
 
@@ -704,9 +673,7 @@ stop(void)
  * Config SNTP server handling by IP address, name, or DHCP; clear table
  * @param set_servers_from_dhcp enable or disable getting server addresses from dhcp
  */
-void
-servermode_dhcp(int set_servers_from_dhcp)
-{
+void servermode_dhcp(int set_servers_from_dhcp) {
   u8_t new_mode = set_servers_from_dhcp ? 1 : 0;
   if (_set_servers_from_dhcp != new_mode) {
     _set_servers_from_dhcp = new_mode;
@@ -721,17 +688,16 @@ servermode_dhcp(int set_servers_from_dhcp)
  * @param dnsserver IP address of the NTP server to set
  */
 void ICACHE_FLASH_ATTR
-setserver(u8_t idx, ip_addr_t *server)
-{
+setserver(u8_t idx, ip_addr_t *server) {
   if (idx < SNTP_MAX_SERVERS) {
-    if (server != NULL) {
+    if (server != nullptr) {
       _servers[idx].addr = (*server);
 //      os_printf("server ip %d\n",server->addr);
     } else {
       ip_addr_set_any(false, &_servers[idx].addr);
     }
 #if SNTP_SERVER_DNS
-    _servers[idx].name = NULL;
+    _servers[idx].name = nullptr;
 #endif
   }
 }
@@ -743,9 +709,7 @@ setserver(u8_t idx, ip_addr_t *server)
  * @param numdns the index of the NTP server to set must be < SNTP_MAX_SERVERS
  * @param dnsserver IP address of the NTP server to set
  */
-void
-dhcp_set_ntp_servers(u8_t num, ip_addr_t *server)
-{
+void dhcp_set_ntp_servers(u8_t num, ip_addr_t *server) {
   LWIP_DEBUGF(SNTP_DEBUG_TRACE, ("sntp: %s %s as NTP server #%u via DHCP\n",
     (_set_servers_from_dhcp ? "Got" : "Rejected"),
     ipaddr_ntoa(&server), num));
@@ -755,7 +719,7 @@ dhcp_set_ntp_servers(u8_t num, ip_addr_t *server)
       setserver(i, &server[i]);
     }
     for (i = num; i < SNTP_MAX_SERVERS; i++) {
-      setserver(i, NULL);
+      setserver(i, nullptr);
     }
   }
 }
@@ -769,8 +733,7 @@ dhcp_set_ntp_servers(u8_t num, ip_addr_t *server)
  *         server has not been configured by address (or at all).
  */
 ip_addr_t ICACHE_FLASH_ATTR
-getserver(u8_t idx)
-{
+getserver(u8_t idx) {
   if (idx < SNTP_MAX_SERVERS) {
     return _servers[idx].addr;
   }
@@ -785,8 +748,7 @@ getserver(u8_t idx)
  * @param dnsserver DNS name of the NTP server to set, to be resolved at contact time
  */
 void ICACHE_FLASH_ATTR
-setservername(u8_t idx, char *server)
-{
+setservername(u8_t idx, char *server) {
   if (idx < SNTP_MAX_SERVERS) {
     _servers[idx].name = server;
   }
@@ -796,22 +758,20 @@ setservername(u8_t idx, char *server)
  * Obtain one of the currently configured by name NTP servers.
  *
  * @param numdns the index of the NTP server
- * @return IP address of the indexed NTP server or NULL if the NTP
+ * @return IP address of the indexed NTP server or nullptr if the NTP
  *         server has not been configured by name (or at all)
  */
 char * ICACHE_FLASH_ATTR
-getservername(u8_t idx)
-{
+getservername(u8_t idx) {
   if (idx < SNTP_MAX_SERVERS) {
     return _servers[idx].name;
   }
-  return NULL;
+  return nullptr;
 }
 #endif /* SNTP_SERVER_DNS */
 
 void ICACHE_FLASH_ATTR
-set_update_delay(uint32 ms)
-{
+set_update_delay(uint32 ms) {
 	_update_delay = ms > 15000 ? ms : 15000;
 }
 
