@@ -20,6 +20,8 @@ It is useful for making clocks and more.
 
 # Installation
 
+## Arduino IDE
+
 1. [zip をここからダウンロード](https://github.com/hunamizawa/ESPPerfectTime/archive/master.zip)<br>
    [Download zip file from here](https://github.com/hunamizawa/ESPPerfectTime/archive/master.zip)
 1. Arduino IDE を開く<br>
@@ -28,6 +30,12 @@ It is useful for making clocks and more.
    Select menu \[Sketch\] -> \[Include library\] -> \[Add .ZIP library...\]
 1. ダウンロードした zip を選択<br>
    Select downloaded zip file
+
+## PlatformIO
+
+```
+> pio lib install "ESPPerfectTime"
+```
 
 # Usage
 
