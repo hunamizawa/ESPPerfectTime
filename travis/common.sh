@@ -22,20 +22,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-function build_examples()
+function build_example()
 {
-  excludes=("$@")
-  # track the exit code for this platform
-  local exit_code=0
-  # loop through results and add them to the array
-  examples=($(find $PWD/examples/ -name "*.pde" -o -name "*.ino"))
-
-  # get the last example in the array
-  local last="${examples[@]:(-1)}"
-
-  # loop through example sketches
-  for example in "${examples[@]}"; do
-
+    local example="$1"
+    
     # store the full path to the example's sketch directory
     local example_dir=$(dirname $example)
 
@@ -76,6 +66,22 @@ function build_examples()
       # heavy checkmark
       echo -e "\xe2\x9c\x93"
     fi
+}
+
+function build_examples()
+{
+  excludes=("$@")
+  # track the exit code for this platform
+  local exit_code=0
+  # loop through results and add them to the array
+  examples=($(find $PWD/examples/ -name "*.pde" -o -name "*.ino"))
+
+  # get the last example in the array
+  local last="${examples[@]:(-1)}"
+
+  # loop through example sketches
+  for example in "${examples[@]}"; do
+    build_example "$example"
   done
 
   return $exit_code
