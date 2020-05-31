@@ -148,6 +148,16 @@ int pftime::settimeofday(const struct timeval *tv, const struct timezone *tz, ui
   return 1;
 }
 
+#ifdef ESP32
+static void setTZ(const char *tz) {
+
+  char tzram[strlen_P(tz) + 1];
+  memcpy_P(tzram, tz, sizeof(tzram));
+  setenv("TZ", tz, 1);
+  tzset();
+}
+#endif
+
 // from esp32-hal-time.c
 static void setTimeZone(long offset, int daylight) {
   using std::abs;
@@ -170,11 +180,7 @@ static void setTimeZone(long offset, int daylight) {
     }
   }
   sprintf(tz, "%s%s", cst, cdt);
-  setenv("TZ", tz, 1);
-#ifdef ESP8266
-  sntp_set_timezone_in_seconds(0);
-#endif
-  tzset();
+  setTZ(tz);
 }
 
 /*
@@ -187,9 +193,9 @@ void pftime::configTime(long gmtOffset_sec, int daylightOffset_sec, const char *
   pftime_sntp::stop();
 
   //pftime_sntp::setoperatingmode(SNTP_OPMODE_POLL);
-  pftime_sntp::setservername(0, (char *)server1);
-  pftime_sntp::setservername(1, (char *)server2);
-  pftime_sntp::setservername(2, (char *)server3);
+  pftime_sntp::setservername(0, server1);
+  pftime_sntp::setservername(1, server2);
+  pftime_sntp::setservername(2, server3);
 
   setTimeZone(-gmtOffset_sec, daylightOffset_sec);
 
@@ -198,35 +204,20 @@ void pftime::configTime(long gmtOffset_sec, int daylightOffset_sec, const char *
 
 #ifdef ESP8266
 void pftime::configTime(const char *tz, const char *server1, const char *server2, const char *server3) {
-  sntp_stop();
-  pftime_sntp::stop();
-
-  pftime_sntp::setservername(0, (char *)server1);
-  pftime_sntp::setservername(1, (char *)server2);
-  pftime_sntp::setservername(2, (char *)server3);
-
-  char tzram[strlen_P(tz) + 1];
-  memcpy_P(tzram, tz, sizeof(tzram));
-  setenv("TZ", tzram, 1 /*overwrite*/);
-  sntp_set_timezone_in_seconds(0);
-  tzset();
-
-  pftime_sntp::init();
+  pftime::configTzTime(tz, server1, server2, server3);
 }
 #endif
 
-#ifdef ESP32
 void pftime::configTzTime(const char *tz, const char *server1, const char *server2, const char *server3) {
   if (sntp_enabled())
-      sntp_stop();
+    sntp_stop();
   pftime_sntp::stop();
 
-  //sntp_setoperatingmode(SNTP_OPMODE_POLL);
-  pftime_sntp::setservername(0, (char *)server1);
-  pftime_sntp::setservername(1, (char *)server2);
-  pftime_sntp::setservername(2, (char *)server3);
+  pftime_sntp::setservername(0, server1);
+  pftime_sntp::setservername(1, server2);
+  pftime_sntp::setservername(2, server3);
+
+  setTZ(tz);
+
   pftime_sntp::init();
-  setenv("TZ", tz, 1);
-  tzset();
 }
-#endif

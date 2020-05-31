@@ -228,7 +228,7 @@ static struct udp_pcb *_sntp_pcb;
 /** Names/Addresses of servers */
 struct sntp_server {
 #if SNTP_SERVER_DNS
-  char *name;
+  const char *name;
 #endif /* SNTP_SERVER_DNS */
   ip_addr_t addr;
 };
@@ -748,7 +748,7 @@ getserver(u8_t idx) {
  * @param dnsserver DNS name of the NTP server to set, to be resolved at contact time
  */
 void ICACHE_FLASH_ATTR
-setservername(u8_t idx, char *server) {
+setservername(u8_t idx, const char *server) {
   if (idx < SNTP_MAX_SERVERS) {
     _servers[idx].name = server;
   }
@@ -761,7 +761,7 @@ setservername(u8_t idx, char *server) {
  * @return IP address of the indexed NTP server or nullptr if the NTP
  *         server has not been configured by name (or at all)
  */
-char * ICACHE_FLASH_ATTR
+const char * ICACHE_FLASH_ATTR
 getservername(u8_t idx) {
   if (idx < SNTP_MAX_SERVERS) {
     return _servers[idx].name;

@@ -15,13 +15,11 @@ void configTime(long gmtOffset_sec, int daylightOffset_sec, const char *server1,
 #ifdef ESP8266
 void configTime(const char *tz, const char *server1, const char *server2 = nullptr, const char *server3 = nullptr);
 #endif
-#ifdef ESP32
 /*
   * configTzTime
   * sntp setup using TZ environment variable
   * */
 void configTzTime(const char *tz, const char *server1, const char *server2 = nullptr, const char *server3 = nullptr);
-#endif
 } // namespace pftime
 
 #endif // ESPPERFECTTIME_H_

@@ -48,7 +48,7 @@ void stop(void);
  * @param numdns the index of the NTP server to set must be < SNTP_MAX_SERVERS
  * @param dnsserver DNS name of the NTP server to set, to be resolved at contact time
  */
-void setservername(u8_t idx, char *server);
+void setservername(u8_t idx, const char *server);
 /**
  * Obtain one of the currently configured by name NTP servers.
  *
@@ -56,7 +56,7 @@ void setservername(u8_t idx, char *server);
  * @return IP address of the indexed NTP server or NULL if the NTP
  *         server has not been configured by name (or at all)
  */
-char *getservername(u8_t idx);
+const char *getservername(u8_t idx);
 #endif /* SNTP_SERVER_DNS */
 } // namespace pftime_sntp
 
