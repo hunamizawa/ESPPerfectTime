@@ -13,23 +13,23 @@ The following features allow you to handle the time more accurately on ESP8266/E
 - NTP サーバーとの通信に要する時間を計算して補正<br>
   Computing round-trip delay for time synchronization
 - うるう秒対応<br>
-  Supporting for leap seconds
+  Supporting for leap seconds in STEP mode
 
 ESP8266/ESP32 で時計などを製作する際に役立ちます。<br>
-It is useful for making clocks and more.
+It's useful for making clocks, etc.
 
 # Installation
 
 ## Arduino IDE
 
-1. [zip をここからダウンロード](https://github.com/hunamizawa/ESPPerfectTime/archive/master.zip)<br>
-   [Download zip file from here](https://github.com/hunamizawa/ESPPerfectTime/archive/master.zip)
 1. Arduino IDE を開く<br>
-   Open Arduino IDE
-1. \[スケッチ\] → \[ライブラリをインクルード\] → \[.ZIP形式のライブラリをインストール...\] を選択<br>
-   Select menu \[Sketch\] -> \[Include library\] -> \[Add .ZIP library...\]
-1. ダウンロードした zip を選択<br>
-   Select downloaded zip file
+   Execute Arduino IDE
+1. ライブラリマネージャを開く（\[ツール\] → \[ライブラリを管理...\] を選択）<br>
+   Open Library Manager (Select menu \[Tools\] -> \[Manage Libraries...\])
+1. 「ESPPerfectTime」を検索<br>
+   Search "ESPPerfectTime"
+1. 「インストール」を押す<br>
+   Push "Install"
 
 ## PlatformIO
 
