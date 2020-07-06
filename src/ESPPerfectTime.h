@@ -11,6 +11,7 @@ struct tm *localtime(const time_t *timer, suseconds_t *res_usec = nullptr);
 int        gettimeofday(struct timeval *tv, struct timezone *unused);
 int        settimeofday(const struct timeval *tv, const struct timezone *unused, uint8_t li = 0);
 
+[[deprecated("Use configTzTime(const char *tz, ...). Also, ESP8266 Arduino core (2.7.0 to 2.7.1) has a bug for this function, which can avoid by using configTzTime(const char *tz, ...).")]]
 void configTime(long gmtOffset_sec, int daylightOffset_sec, const char *server1, const char *server2 = nullptr, const char *server3 = nullptr);
 #ifdef ESP8266
 void configTime(const char *tz, const char *server1, const char *server2 = nullptr, const char *server3 = nullptr);
