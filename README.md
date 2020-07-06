@@ -83,7 +83,7 @@ tm = pftime::localtime(t);
 
 ```
 configTime
-configTzTime (ESP32 only)
+configTzTime
 time
 gmtime
 localtime
