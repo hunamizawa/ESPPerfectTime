@@ -41,6 +41,9 @@ void setup() {
   pftime::configTzTime(PSTR("JST-9"), ntpServer);
   // Or you can use:
   //pftime::configTime(9 * 3600, 0, ntpServer);
+
+  // NOTE: ESP8266 Arduino core (2.7.0 to 2.7.1) has a sign-reversal bug for configTime(),
+  //       so using configTzTime() is recommended
 }
 
 void loop() {
