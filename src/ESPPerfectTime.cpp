@@ -125,8 +125,8 @@ time_t pftime::time(time_t *timer) {
 DEFINE_FUNC_FOOTIME(gmtime);
 DEFINE_FUNC_FOOTIME(localtime);
 
-int pftime::gettimeofday(struct timeval *tv, struct timezone *tz) {
-  (void)tz;
+int pftime::gettimeofday(struct timeval *tv, struct timezone *unused) {
+  (void)unused;
 
   if (tv) {
     ::gettimeofday(tv, nullptr);
@@ -135,9 +135,11 @@ int pftime::gettimeofday(struct timeval *tv, struct timezone *tz) {
   return 0;
 }
 
-int pftime::settimeofday(const struct timeval *tv, const struct timezone *tz, uint8_t li) {
+int pftime::settimeofday(const struct timeval *tv, const struct timezone *unused, uint8_t li) {
+  (void)unused;
+  
   if (tv) {
-    int result      = ::settimeofday(tv, tz);
+    int result      = ::settimeofday(tv, nullptr);
     _leap_indicator = li;
     if (li != LI_NO_WARNING) {
       _leap_time = calcNextLeapPoint(tv->tv_sec);

@@ -8,8 +8,8 @@ namespace pftime {
 time_t     time(time_t *timer);
 struct tm *gmtime   (const time_t *timer, suseconds_t *res_usec = nullptr);
 struct tm *localtime(const time_t *timer, suseconds_t *res_usec = nullptr);
-int        gettimeofday(struct timeval *tv, struct timezone *tz);
-int        settimeofday(const struct timeval *tv, const struct timezone *tz, uint8_t li = 0);
+int        gettimeofday(struct timeval *tv, struct timezone *unused);
+int        settimeofday(const struct timeval *tv, const struct timezone *unused, uint8_t li = 0);
 
 void configTime(long gmtOffset_sec, int daylightOffset_sec, const char *server1, const char *server2 = nullptr, const char *server3 = nullptr);
 #ifdef ESP8266
