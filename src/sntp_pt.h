@@ -33,6 +33,26 @@
 
 namespace pftime_sntp {
 /**
+ * Define sync callback type
+ */
+typedef void (*sync_callback_t)();
+
+/**
+ * Set SNTP sync callback
+ */
+void setsynccallback(sync_callback_t);
+
+/**
+ * Define fail callback type
+ */
+typedef void (*fail_callback_t)(const char*);
+
+/**
+ * Set SNTP fail callback
+ */
+void setfailcallback(fail_callback_t);
+
+/**
  * Initialize this module.
  * Send out request instantly or after SNTP_STARTUP_DELAY(_FUNC).
  */
