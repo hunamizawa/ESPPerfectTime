@@ -10,7 +10,7 @@
 #include <esp32-hal.h>
 #endif // ESP32
 #include "ESPPerfectTime.h"
-#include "sntp.h"
+#include <sntp_pt.h>
 
 #define EPOCH_YEAR                   1970
 #define TIME_2020_01_01_00_00_00_UTC 1577836800
