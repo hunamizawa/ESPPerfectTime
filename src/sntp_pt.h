@@ -18,11 +18,6 @@
 
 #define USECS_IN_SEC           1000000
 
-#define LI_NO_WARNING          0x00
-#define LI_LAST_MINUTE_61_SEC  0x01
-#define LI_LAST_MINUTE_59_SEC  0x02
-#define LI_ALARM_CONDITION     0x03 /* (clock not synchronized) */
-
 #define LI_ntoa(x) (                                     \
   x == LI_NO_WARNING         ? "LI_NO_WARNING" :         \
   x == LI_LAST_MINUTE_61_SEC ? "LI_LAST_MINUTE_61_SEC" : \
@@ -32,25 +27,16 @@
 )
 
 namespace pftime_sntp {
-/**
- * Define sync callback type
- */
-typedef void (*sync_callback_t)();
 
 /**
  * Set SNTP sync callback
  */
-void setsynccallback(sync_callback_t);
-
-/**
- * Define fail callback type
- */
-typedef void (*fail_callback_t)(const char*);
+void setsynccallback(pftime::sync_callback_t);
 
 /**
  * Set SNTP fail callback
  */
-void setfailcallback(fail_callback_t);
+void setfailcallback(pftime::fail_callback_t);
 
 /**
  * Initialize this module.

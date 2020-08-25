@@ -266,8 +266,8 @@ static u32_t _last_timestamp_sent[2];
 
 static uint32 _update_delay = SNTP_UPDATE_DELAY;
 
-static sync_callback_t _cb;
-static fail_callback_t _failcb;
+static pftime::sync_callback_t _cb;
+static pftime::fail_callback_t _failcb;
 
 static void ICACHE_FLASH_ATTR
 set_system_time_us(const u32_t sec, const u32_t us, const u8_t li) {
@@ -662,16 +662,16 @@ request(void *arg) {
  * Set a callback to be called after a successful time sync
  */
 void ICACHE_FLASH_ATTR
-setsynccallback(sync_callback_t cb) {
-	_cb = cb;
+setsynccallback(pftime::sync_callback_t cb) {
+  _cb = cb;
 }
 
 /**
  * Set a callback to be called after a successful time sync
  */
 void ICACHE_FLASH_ATTR
-setfailcallback(fail_callback_t cb) {
-	_failcb = cb;
+setfailcallback(pftime::fail_callback_t cb) {
+  _failcb = cb;
 }
 
 /**

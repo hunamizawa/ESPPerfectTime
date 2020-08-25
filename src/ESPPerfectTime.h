@@ -8,6 +8,15 @@
 #include <sys/time.h>
 #include <time.h>
 
+//! @brief Time leaping not scheduled
+#define LI_NO_WARNING         0x00
+//! @brief Last minute has 61 seconds
+#define LI_LAST_MINUTE_61_SEC 0x01
+//! @brief Last minute has 59 seconds
+#define LI_LAST_MINUTE_59_SEC 0x02
+//! @brief The NTP server's clock not synchronized
+#define LI_ALARM_CONDITION    0x03
+
 namespace pftime {
 
 /**
@@ -63,9 +72,9 @@ int gettimeofday(struct timeval *tv, struct timezone *unused);
 int settimeofday(const struct timeval *tv, const struct timezone *unused, uint8_t li = 0);
 
 /**
- * @brief Initializes SNTP client with given timezone, then starts it.
+ * @brief Initializes SNTP client with given timezone, and starts it.
  * @deprecated Use configTzTime() instead. It can handles DST automatically.
- * @bug ESP8266 Arduino core (2.7.0 to 2.7.1) has a sign-reversal bug for @c gmtOffset_sec, which can avoid by using configTzTime(). This will be fixed in the coming 2.7.2 release. See: https://github.com/esp8266/Arduino/issues/7319
+ * @bug ESP8266 Arduino core (2.7.0 to 2.7.1) has a sign-reversal bug for @c gmtOffset_sec, which can avoid by using configTzTime(). This was fixed in 2.7.2. See: https://github.com/esp8266/Arduino/issues/7319
  * 
  * @param gmtOffset_sec       Local time offset from UTC (in seconds)
  * @param daylightOffset_sec  DST offset (in seconds)
@@ -75,9 +84,10 @@ int settimeofday(const struct timeval *tv, const struct timezone *unused, uint8_
  */
 [[deprecated("Use configTzTime(const char *tz, ...). Also, ESP8266 Arduino core (2.7.0 to 2.7.1) has a bug for this function, which can avoid by using configTzTime(const char *tz, ...).")]]
 void configTime(long gmtOffset_sec, int daylightOffset_sec, const char *server1, const char *server2 = nullptr, const char *server3 = nullptr);
+
 #ifdef ESP8266
 /**
- * @brief <b>[ESP8266 only]</b> Initializes SNTP client with given timezone, then starts it.
+ * @brief <b>[ESP8266 only]</b> Initializes SNTP client with given timezone, and starts it.
  * 
  * @param tz      A timezone definition, expressed in POSIX-style tz format
  * @param server1 The primary NTP server address
@@ -86,8 +96,9 @@ void configTime(long gmtOffset_sec, int daylightOffset_sec, const char *server1,
  */
 void configTime(const char *tz, const char *server1, const char *server2 = nullptr, const char *server3 = nullptr);
 #endif
+
 /**
- * @brief Initializes SNTP client with given timezone, then starts it.
+ * @brief Initializes SNTP client with given timezone, and starts it.
  * 
  * @param tz      A timezone definition, expressed in POSIX-style tz format
  * @param server1 The primary NTP server address
@@ -95,6 +106,36 @@ void configTime(const char *tz, const char *server1, const char *server2 = nullp
  * @param server3 The tertiary NTP server address (optional)
  */
 void configTzTime(const char *tz, const char *server1, const char *server2 = nullptr, const char *server3 = nullptr);
+
+/**
+ * @brief Get current Leap Indicator value
+ */
+uint8_t getLeapIndicator();
+
+/**
+ * @brief The callback function type for setSyncSuccessCallback().
+ */
+using sync_callback_t = void (*)();
+
+/**
+ * @brief Set the callback called when time syncing completed successfully.
+ * 
+ * @param cb The callback function as a @c sync_callback_t object
+ */
+void setSyncSuccessCallback(sync_callback_t cb);
+
+/**
+ * @brief The callback function type for setSyncFailCallback().
+ */
+using fail_callback_t = void (*)(const char *);
+
+/**
+ * @brief Set the callback called when time syncing failed.
+ * 
+ * @param cb The callback function as a @c fail_callback_t object
+ */
+void setSyncFailCallback(fail_callback_t cb);
+
 } // namespace pftime
 
 #endif // ESPPERFECTTIME_H_

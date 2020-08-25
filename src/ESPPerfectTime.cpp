@@ -31,6 +31,20 @@ static uint8_t   _leap_indicator = LI_NO_WARNING;
 static time_t    _leap_time      = 0; // The second of the end of the month -- 23:59:59 in UTC
 static struct tm _tm_result;
 
+uint8_t pftime::getLeapIndicator() {
+  if (_leap_indicator == LI_ALARM_CONDITION)
+    return LI_ALARM_CONDITION;
+
+  struct timeval tv;
+  ::gettimeofday(&tv, nullptr);
+
+  // Actually _leap_indicator doesn't change just after leaping (it will change the next syncing)
+  if ((_leap_indicator == LI_LAST_MINUTE_61_SEC && tv.tv_sec > _leap_time + 1) || (_leap_indicator == LI_LAST_MINUTE_59_SEC && tv.tv_sec >= _leap_time))
+    return LI_NO_WARNING;
+
+  return _leap_indicator;
+}
+
 static void adjustLeapSec(time_t *t) {
   if (_leap_indicator == LI_LAST_MINUTE_61_SEC && *t > _leap_time)
     (*t)--;
@@ -222,4 +236,12 @@ void pftime::configTzTime(const char *tz, const char *server1, const char *serve
   setTZ(tz);
 
   pftime_sntp::init();
+}
+
+void pftime::setSyncSuccessCallback(sync_callback_t cb) {
+  pftime_sntp::setsynccallback(cb);
+}
+
+void pftime::setSyncFailCallback(fail_callback_t cb) {
+  pftime_sntp::setfailcallback(cb);
 }
