@@ -43,14 +43,16 @@ It's useful for making clocks, etc.
 
 ```cpp
 // Configure SNTP client in the same way as built-in one
-pftime::configTime(9 * 3600, 0, ntpServer);
-
-// Or you can use string definitions
 #ifdef ESP8266
 pftime::configTime(TZ_Asia_Tokyo, ntpServer);
 #else /* ESP32 */
+// For ESP32 users, you can refer to following link to get POSIX-style tz string:
+// https://github.com/esp8266/Arduino/blob/master/cores/esp8266/TZ.h
 pftime::configTzTime("JST-9", ntpServer);
 #endif
+
+// This is deprecated
+pftime::configTime(9 * 3600, 0, ntpServer);
 
 // Get current local time as struct tm
 // by calling pftime::localtime(nullptr)
@@ -94,10 +96,12 @@ settimeofday
 Like this:
 
 ```cpp
-// configTime(EST, 0, "time.nist.gov", "time.cloudflare.com");
-pftime::configTime(EST, 0, "time.nist.gov", "time.cloudflare.com");
+// (Instead of) configTime(TZ_America_New_York, 0, "time.nist.gov", "time.cloudflare.com");
+pftime::configTime(TZ_America_New_York, 0, "time.nist.gov", "time.cloudflare.com");
+// For ESP32:
+pftime::configTzTime("EST5EDT,M3.2.0,M11.1.0", 0, "time.nist.gov", "time.cloudflare.com");
 
-// time_t t = time(nullptr);
+// (Instead of) time_t t = time(nullptr);
 time_t t = pftime::time(nullptr);
 ```
 
@@ -130,7 +134,7 @@ After:
 ```cpp
 // パターン 1
 // 現在時刻は pftime::localtime(nullptr) で直接取得する
-// You should use pftime::localtime(nullptr)
+// You should use pftime::localtime(nullptr) (NOT pftime::localtime(&timer))
 // to get current time as struct tm
 struct tm *tm = pftime::localtime(nullptr);
 
@@ -152,13 +156,13 @@ Also, when a leap second is inserted, the minute becomes 61 seconds (NOT 60 secs
 
 ```cpp
 // 毎分00秒に何か測定をする
-// Measure something on the zero second of each minute
+// Measures something on the zero second of each minute
 
 void loop() {
   time_t t;
 
   // 現在時刻を取得
-  // Get current time
+  // Gets current time
   t = pftime::time(nullptr);
 
   // 計測処理
@@ -166,7 +170,7 @@ void loop() {
   measure();
 
   // 次の分の00秒まで待つ
-  // Wait for the zero second of next minute
+  // Waits for the zero second of next minute
   time_t interval_for_next_zero = 60 - t % 60;
   delay(interval_for_next_zero * 1000);
 }
@@ -175,8 +179,8 @@ void loop() {
 このコードを、うるう秒が挿入される日の 23時59分00秒 (UTC) に実行したとします。<br>
 If this code is executed at 23:59:00 UTC on the day the leap second is inserted, it works like this:
 
-1. `interval_for_next_zero` は「1分が60秒」だと仮定して、「23時59分00秒 から 60秒後」の時刻を計算しています。<br>
-`interval_for_next_zero` is the result of the calculation of the time 60 seconds after 23:59:00, which is based on the assumption that one minute is 60 seconds.
+1. 変数 `interval_for_next_zero` は「1分が60秒」だと仮定して、「23時59分00秒 から 60秒後」の時刻を計算しています。<br>
+The variable `interval_for_next_zero` is the result of the calculation of the time 60 seconds after 23:59:00, which is based on the assumption that one minute is 60 seconds.
 1. `delay()` を抜けた瞬間の時刻は（通常なら翌日の 00時00分00秒 になるところですが）うるう秒が入るために 23時59分**60**秒 となります。<br>
 The time at the moment of exiting the `delay()` is 23:59:**60** because of the leap seconds, which would normally be 00:00:00 the next day.
 1. 先述の通り、この時の `time_t` の値は 23時59分59秒 ですから、（`measure()` が1秒未満で完了すると）`t % 60 == 59` となり、1秒後に再び計測が実行されてしまいます。<br>
@@ -190,7 +194,7 @@ void loop() {
   time_t t;
 
   // 今が本当に00秒か確認する
-  // Ensure now is the zero second of the minute
+  // Ensures now is the 00 sec of the minute, not 60 sec
   while ((t = pftime::time(nullptr)) % 60 != 0) {
     delay(100);
   }
@@ -204,15 +208,16 @@ void loop() {
 
 1秒足す場合は、12月31日（または7月1日）の最後（23時59分59秒の後）に、23時59分**60秒** という1秒を付け足します。
 
-このときの時間の流れは以下のようになります。
+このときの時間の流れと、各関数の戻り値は以下のようになります。<br>
+When the leap second is inserted, the return value of each function is as follows:
 
-|real time (UTC)|pftime::time()|pftime::gmtime(nullptr)|pftime::gmtime(&timer)|::time()|::gmtime(&timer)|
-|:---:|:---:|:---:|:---:|:---:|:---:|
-|2016-12-31<br>23:59:58|1483228798|2016-12-31<br>23:59:58|2016-12-31<br>23:59:58|1483228798|2016-12-31<br>23:59:58|
-|2016-12-31<br>23:59:59|1483228799|2016-12-31<br>23:59:59|2016-12-31<br>23:59:59|1483228799|2016-12-31<br>23:59:59|
-|**2016-12-31<br>23:59:60**|**1483228799**|**2016-12-31<br>23:59:60**|**2016-12-31<br>23:59:59**|**1483228800**|**2017-01-01<br>00:00:00**|
-|2017-01-01<br>00:00:00|1483228800|2017-01-01<br>00:00:00|2017-01-01<br>00:00:00|1483228801|2017-01-01<br>00:00:01|
-|2017-01-01<br>00:00:01|1483228801|2017-01-01<br>00:00:01|2017-01-01<br>00:00:01|1483228802|2017-01-01<br>00:00:02|
+|real time (UTC)|pftime::time()|pftime::gmtime(nullptr)|pftime::gmtime(&timer)|pftime::getLeapIndicator()|::time()|::gmtime(&timer)|
+|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+|2016-12-31<br>23:59:58|1483228798|2016-12-31<br>23:59:58|2016-12-31<br>23:59:58|LI_LAST_MINUTE_61_SEC|1483228798|2016-12-31<br>23:59:58|
+|2016-12-31<br>23:59:59|1483228799|2016-12-31<br>23:59:59|2016-12-31<br>23:59:59|LI_LAST_MINUTE_61_SEC|1483228799|2016-12-31<br>23:59:59|
+|**2016-12-31<br>23:59:60**|**1483228799**|**2016-12-31<br>23:59:60**|**2016-12-31<br>23:59:59**|**LI_LAST_MINUTE_61_SEC**|**1483228800**|**2017-01-01<br>00:00:00**|
+|2017-01-01<br>00:00:00|1483228800|2017-01-01<br>00:00:00|2017-01-01<br>00:00:00|LI_NO_WARNING|1483228801|2017-01-01<br>00:00:01|
+|2017-01-01<br>00:00:01|1483228801|2017-01-01<br>00:00:01|2017-01-01<br>00:00:01|LI_NO_WARNING|1483228802|2017-01-01<br>00:00:02|
 
 うるう秒が挿入された瞬間から、従来の `time()` は UTC より1秒先に進んでしまいます（これは次回の SNTP 同期により修正されます）。`pftime::time()` を用いると、うるう秒が正しく挿入され、UTC とのズレは発生しません。さらに `pftime::gmtime(nullptr)` を用いることで、通常ならあり得ない 23時59分**60秒** という表現を得ることができます。
 
