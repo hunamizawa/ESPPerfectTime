@@ -6,3 +6,6 @@ gettimeofday	KEYWORD2
 settimeofday	KEYWORD2
 configTime	KEYWORD2
 configTzTime	KEYWORD2
+getLeapIndicator	KEYWORD2
+setSyncSuccessCallback	KEYWORD2
+setSyncFailCallback	KEYWORD2

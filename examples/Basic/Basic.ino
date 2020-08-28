@@ -51,7 +51,7 @@ void setup() {
   pftime::configTzTime(PSTR("JST-9"), ntpServer);
 #endif
 
-  // This is obsolete:
+  // This is deprecated:
   //pftime::configTime(9 * 3600, 0, ntpServer);
 
   // NOTE: ESP8266 Arduino core (2.7.0 to 2.7.1) has a sign-reversal bug for configTime(),
@@ -77,6 +77,7 @@ void loop() {
 
   // If time_t is passed as 1st argument,
   // pftime::localtime() behaves as with built-in localtime() function
+  // This is for backward compatibility
   tm = pftime::localtime(&t);
 
   delay(1000);

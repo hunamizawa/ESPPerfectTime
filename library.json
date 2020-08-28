@@ -1,6 +1,6 @@
 {
   "name": "ESPPerfectTime",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "keywords": "esp8266, esp32, ntp, sntp, time, clock",
   "description": "SNTP library that provides more accurate time for Arduino ESP8266/ESP32",
   "authors": {
