@@ -1,5 +1,13 @@
 [![Build Status](https://travis-ci.org/hunamizawa/ESPPerfectTime.svg?branch=master)](https://travis-ci.org/hunamizawa/ESPPerfectTime)
 
+# Abandoned
+
+本ライブラリは、うるう秒による UTC の調節が今後実質的に行われないことから、廃止されました。
+
+最近の esp-idf は、NTP パケットの往復時間を補正して時刻合わせを行いますし、v5.0 で2038年問題の対策が入っています。現在は esp-idf 組み込みの SNTP クライアントを用いるのが、最良の選択肢であると考えます。
+
+----
+
 # ESPPerfectTime
 
 ESP8266/ESP32用 SNTP 時刻同期 Arduino ライブラリ<br>
